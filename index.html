@@ -1,0 +1,87 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>QRコード読み取りテスト</title>
+  <script src="https://unpkg.com/html5-qrcode"></script>
+  <style>
+    body {
+      font-family: sans-serif;
+      max-width: 600px;
+      margin: 20px auto;
+      padding: 16px;
+      text-align: center;
+    }
+    #reader {
+      width: 100%;
+      max-width: 450px;
+      margin: 20px auto;
+    }
+    #result {
+      overflow-wrap: anywhere;
+      font-size: 18px;
+      font-weight: bold;
+      color: #176b36;
+    }
+    button {
+      padding: 12px 20px;
+      font-size: 16px;
+      margin: 8px;
+    }
+  </style>
+</head>
+<body>
+  <h2>QRコード読み取りテスト</h2>
+  <p>ボタンを押してカメラを起動してください。</p>
+
+  <button id="startButton">カメラを起動</button>
+  <div id="reader"></div>
+  <p id="status">待機中</p>
+  <p id="result"></p>
+
+  <script>
+    const status = document.getElementById("status");
+    const result = document.getElementById("result");
+    const startButton = document.getElementById("startButton");
+    let scanner = null;
+    let starting = false;
+
+    startButton.addEventListener("click", async () => {
+      if (starting || scanner) return;
+      starting = true;
+      startButton.disabled = true;
+      status.textContent = "カメラを起動しています…";
+
+      try {
+        scanner = new Html5Qrcode("reader");
+        await scanner.start(
+          { facingMode: "environment" },
+          { fps: 10, qrbox: { width: 250, height: 250 } },
+          async (decodedText) => {
+            result.textContent = "読み取り結果：" + decodedText;
+            status.textContent = "読み取り成功";
+            await scanner.stop();
+            scanner.clear();
+            scanner = null;
+            startButton.disabled = false;
+            starting = false;
+          },
+          () => {}
+        );
+        status.textContent = "カメラ起動成功。QRコードをかざしてください。";
+      } catch (error) {
+        status.textContent = "起動エラー：" + error;
+        if (scanner) {
+          try { await scanner.clear(); } catch (e) {}
+          scanner = null;
+        }
+        startButton.disabled = false;
+      } finally {
+        starting = false;
+      }
+    });
+  </script>
+</body>
+</html>
