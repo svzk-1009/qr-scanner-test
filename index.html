@@ -4,52 +4,149 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>QRコード読み取りテスト</title>
+  <title>部品一括登録テスト</title>
   <script src="https://unpkg.com/html5-qrcode"></script>
   <style>
     body {
       font-family: sans-serif;
       max-width: 600px;
-      margin: 20px auto;
+      margin: 0 auto;
       padding: 16px;
-      text-align: center;
+      color: #222;
     }
+    h2 { margin-bottom: 8px; }
+    button, input {
+      font-size: 16px;
+      padding: 10px;
+      box-sizing: border-box;
+    }
+    button { cursor: pointer; }
+    .manual {
+      display: flex;
+      gap: 8px;
+      margin: 16px 0;
+    }
+    .manual input { min-width: 0; flex: 1; }
     #reader {
       width: 100%;
       max-width: 450px;
-      margin: 20px auto;
+      margin: 16px auto;
     }
-    #result {
+    .item {
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      padding: 12px;
+      margin: 10px 0;
+    }
+    .item input { width: 90px; }
+    .item button { margin-left: 8px; }
+    #status { color: #555; }
+    #confirmResult {
+      white-space: pre-wrap;
       overflow-wrap: anywhere;
-      font-size: 18px;
-      font-weight: bold;
-      color: #176b36;
-    }
-    button {
-      padding: 12px 20px;
-      font-size: 16px;
-      margin: 8px;
+      background: #f3f3f3;
+      padding: 12px;
+      border-radius: 8px;
     }
   </style>
 </head>
 <body>
-  <h2>QRコード読み取りテスト</h2>
-  <p>ボタンを押してカメラを起動してください。</p>
+  <h2>部品一括登録テスト</h2>
+  <p>読み取った部品IDを仮リストに登録します。</p>
+  <p><strong>※ この画面では在庫数は変更されません。</strong></p>
 
   <button id="startButton">カメラを起動</button>
+  <button id="stopButton" disabled>カメラを停止</button>
   <div id="reader"></div>
-  <p id="status">待機中</p>
-  <p id="result"></p>
+  <p id="status">カメラ停止中</p>
+
+  <h3>部品IDを手入力</h3>
+  <div class="manual">
+    <input id="manualId" placeholder="部品IDを入力">
+    <button id="addManual">追加</button>
+  </div>
+
+  <h3>仮リスト <span id="count">0</span>件</h3>
+  <div id="list"></div>
+
+  <button id="confirmButton">登録内容を確認</button>
+  <div id="confirmResult"></div>
 
   <script>
-    const status = document.getElementById("status");
-    const result = document.getElementById("result");
-    const startButton = document.getElementById("startButton");
+    const list = [];
     let scanner = null;
+    let lastText = "";
+    let lastTime = 0;
     let starting = false;
 
+    const status = document.getElementById("status");
+    const listElement = document.getElementById("list");
+    const countElement = document.getElementById("count");
+    const startButton = document.getElementById("startButton");
+    const stopButton = document.getElementById("stopButton");
+
+    function addItem(rawId) {
+      const id = rawId.trim();
+      if (!id) {
+        alert("部品IDを入力してください。");
+        return;
+      }
+
+      const existing = list.find(item => item.id === id);
+      if (existing) {
+        existing.qty += 1;
+      } else {
+        list.push({ id, qty: 1 });
+      }
+      renderList();
+    }
+
+    function renderList() {
+      listElement.replaceChildren();
+      countElement.textContent = list.length;
+
+      list.forEach((item, index) => {
+        const card = document.createElement("div");
+        card.className = "item";
+
+        const idText = document.createElement("strong");
+        idText.textContent = item.id;
+        card.appendChild(idText);
+        card.appendChild(document.createElement("br"));
+
+        const qtyLabel = document.createElement("label");
+        qtyLabel.textContent = "数量：";
+        const qtyInput = document.createElement("input");
+        qtyInput.type = "number";
+        qtyInput.min = "1";
+        qtyInput.step = "1";
+        qtyInput.value = item.qty;
+        qtyInput.addEventListener("change", () => {
+          const qty = Number(qtyInput.value);
+          if (!Number.isInteger(qty) || qty < 1) {
+            alert("数量は1以上の整数にしてください。");
+            qtyInput.value = item.qty;
+            return;
+          }
+          item.qty = qty;
+        });
+        qtyLabel.appendChild(qtyInput);
+        card.appendChild(qtyLabel);
+
+        const removeButton = document.createElement("button");
+        removeButton.textContent = "削除";
+        removeButton.addEventListener("click", () => {
+          list.splice(index, 1);
+          renderList();
+        });
+        card.appendChild(removeButton);
+
+        listElement.appendChild(card);
+      });
+    }
+
     startButton.addEventListener("click", async () => {
-      if (starting || scanner) return;
+      if (scanner || starting) return;
       starting = true;
       startButton.disabled = true;
       status.textContent = "カメラを起動しています…";
@@ -59,20 +156,20 @@
         await scanner.start(
           { facingMode: "environment" },
           { fps: 10, qrbox: { width: 250, height: 250 } },
-          async (decodedText) => {
-            result.textContent = "読み取り結果：" + decodedText;
-            status.textContent = "読み取り成功";
-            await scanner.stop();
-            scanner.clear();
-            scanner = null;
-            startButton.disabled = false;
-            starting = false;
+          decodedText => {
+            const now = Date.now();
+            if (decodedText === lastText && now - lastTime < 2000) return;
+            lastText = decodedText;
+            lastTime = now;
+            addItem(decodedText);
+            status.textContent = "追加しました：" + decodedText;
           },
           () => {}
         );
-        status.textContent = "カメラ起動成功。QRコードをかざしてください。";
+        stopButton.disabled = false;
+        status.textContent = "読み取り中です。QRコードを順番にかざしてください。";
       } catch (error) {
-        status.textContent = "起動エラー：" + error;
+        status.textContent = "カメラ起動エラー：" + error;
         if (scanner) {
           try { await scanner.clear(); } catch (e) {}
           scanner = null;
@@ -82,6 +179,45 @@
         starting = false;
       }
     });
+
+    stopButton.addEventListener("click", async () => {
+      if (!scanner) return;
+      try {
+        await scanner.stop();
+        scanner.clear();
+      } catch (error) {
+        status.textContent = "停止時のエラー：" + error;
+      }
+      scanner = null;
+      startButton.disabled = false;
+      stopButton.disabled = true;
+      status.textContent = "カメラ停止中";
+    });
+
+    document.getElementById("addManual").addEventListener("click", () => {
+      addItem(document.getElementById("manualId").value);
+      document.getElementById("manualId").value = "";
+    });
+
+    document.getElementById("manualId").addEventListener("keydown", event => {
+      if (event.key === "Enter") {
+        document.getElementById("addManual").click();
+      }
+    });
+
+    document.getElementById("confirmButton").addEventListener("click", () => {
+      if (list.length === 0) {
+        document.getElementById("confirmResult").textContent =
+          "仮リストは空です。";
+        return;
+      }
+      document.getElementById("confirmResult").textContent =
+        "登録内容（確認用）\n\n" +
+        list.map(item => item.id + " × " + item.qty).join("\n") +
+        "\n\n※ 在庫数は変更されていません。";
+    });
+
+    renderList();
   </script>
 </body>
 </html>
