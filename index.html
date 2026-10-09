@@ -1,13 +1,17 @@
-
+```html
 <!DOCTYPE html>
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>部品一括登録テスト</title>
+  <title>部品一括スキャナー</title>
+
   <script src="https://unpkg.com/html5-qrcode"></script>
+
   <style>
-    * { box-sizing: border-box; }
+    * {
+      box-sizing: border-box;
+    }
 
     body {
       font-family: sans-serif;
@@ -15,361 +19,547 @@
       margin: 0 auto;
       padding: 12px;
       color: #222;
+      background: #f7f7f7;
     }
 
-    h2 { margin: 4px 0 8px; font-size: 21px; }
-    h3 { margin: 12px 0 8px; font-size: 17px; }
-    p { margin: 6px 0; }
+    h1 {
+      font-size: 22px;
+      margin: 8px 0 16px;
+    }
 
-    button, input {
+    h2 {
+      font-size: 17px;
+      margin: 12px 0 8px;
+    }
+
+    .panel {
+      background: white;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      padding: 12px;
+      margin-bottom: 12px;
+    }
+
+    button,
+    input,
+    select {
       font-size: 16px;
-      padding: 9px;
+      padding: 10px;
       border-radius: 6px;
     }
 
-    button { cursor: pointer; }
-    button:disabled { opacity: 0.5; }
-
-    .camera-controls {
-      display: flex;
-      gap: 8px;
-      margin: 10px 0;
+    button {
+      border: none;
+      background: #1769aa;
+      color: white;
+      cursor: pointer;
     }
 
-    .camera-controls button { flex: 1; }
+    button:disabled {
+      background: #aaa;
+      cursor: not-allowed;
+    }
+
+    input,
+    select {
+      border: 1px solid #bbb;
+      min-width: 0;
+    }
+
+    .mode-row {
+      display: flex;
+      gap: 8px;
+    }
+
+    .mode-row button {
+      flex: 1;
+    }
+
+    .mode-row button.selected {
+      background: #167344;
+      outline: 3px solid #b8e6cc;
+    }
 
     #reader {
       width: 100%;
-      max-width: 340px;
+      max-width: 440px;
       margin: 8px auto;
     }
 
+    /* カメラ映像を不必要に縮小・切り抜きしない */
     #reader video {
-      max-height: 260px;
-      object-fit: cover;
+      max-width: 100%;
+      height: auto;
+      object-fit: contain;
     }
 
-    #status {
+    #reader img {
+      max-width: 100%;
+    }
+
+    #cameraStatus {
       padding: 10px;
-      border-radius: 8px;
-      background: #f1f1f1;
-      overflow-wrap: anywhere;
+      margin-top: 8px;
+      border-radius: 6px;
+      background: #eee;
       font-size: 14px;
+      overflow-wrap: anywhere;
     }
 
-    #status.success {
-      background: #e0f5e6;
-      color: #155b2b;
+    #cameraStatus.success {
+      background: #e0f5e8;
+      color: #126b38;
       font-weight: bold;
     }
 
-    .manual {
-      display: flex;
-      gap: 8px;
-      margin: 8px 0;
+    #cameraStatus.error {
+      background: #fde8e7;
+      color: #a21d17;
     }
 
-    .manual input { flex: 1; min-width: 0; }
-    .manual button { flex-shrink: 0; }
-
-    .list-heading {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 8px;
-    }
-
-    #count {
-      font-size: 14px;
-      font-weight: normal;
-      color: #555;
+    .counter {
+      font-weight: bold;
+      margin-bottom: 8px;
     }
 
     #list {
-      max-height: 220px;
+      max-height: 280px;
       overflow-y: auto;
-      border-top: 1px solid #ddd;
-      border-bottom: 1px solid #ddd;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      background: white;
     }
 
     .item {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 9px 2px;
+      padding: 10px;
       border-bottom: 1px solid #eee;
     }
 
+    .item:last-child {
+      border-bottom: none;
+    }
+
     .item-id {
-      flex: 1;
-      min-width: 0;
-      overflow-wrap: anywhere;
       font-weight: bold;
+      overflow-wrap: anywhere;
+      margin-bottom: 8px;
+    }
+
+    .item-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .item-controls label {
       font-size: 14px;
     }
 
-    .item input {
-      width: 65px;
-      padding: 7px 4px;
+    .qty {
+      width: 80px;
     }
 
-    .item button {
-      padding: 7px;
-      font-size: 14px;
+    .delete-btn {
+      margin-left: auto;
+      background: #c62828;
+      padding: 8px 12px;
     }
 
-    #confirmButton {
+    .manual-row {
+      display: flex;
+      gap: 8px;
+    }
+
+    .manual-row input {
+      flex: 1;
       width: 100%;
-      margin-top: 12px;
     }
 
-    #confirmResult {
+    .manual-row button {
+      flex-shrink: 0;
+    }
+
+    .full-button {
+      width: 100%;
+      margin-top: 8px;
+    }
+
+    .muted {
+      color: #666;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .warning {
+      color: #a21d17;
+      font-weight: bold;
+    }
+
+    #summary {
       white-space: pre-wrap;
       overflow-wrap: anywhere;
-      background: #f3f3f3;
+      background: #f1f1f1;
+      border-radius: 6px;
       padding: 10px;
-      border-radius: 8px;
-      margin-top: 8px;
-      font-size: 14px;
-    }
-
-    .note {
-      font-size: 12px;
-      color: #666;
+      margin-top: 10px;
     }
   </style>
 </head>
+
 <body>
-  <h2>部品一括登録テスト</h2>
-  <p class="note">この画面では実際の在庫数は変更されません。</p>
+  <h1>部品一括スキャナー</h1>
 
-  <div class="camera-controls">
-    <button id="startButton">カメラを起動</button>
-    <button id="stopButton" disabled>カメラを停止</button>
+  <div class="panel">
+    <h2>1. 処理内容を選択</h2>
+
+    <div class="mode-row">
+      <button id="inBtn" class="selected" type="button">入庫</button>
+      <button id="outBtn" type="button">出庫</button>
+    </div>
+
+    <p class="muted">
+      今回の一括処理で、入庫または出庫のどちらかを選択してください。
+      この画面では仮リストを作成するだけで、在庫数は変更しません。
+    </p>
+    <div>選択中：<strong id="modeLabel">入庫</strong></div>
   </div>
 
-  <div id="reader"></div>
-  <p id="status" aria-live="polite">カメラ停止中</p>
+  <div class="panel">
+    <h2>2. QRコードを読み取る</h2>
 
-  <h3>部品IDを手入力</h3>
-  <div class="manual">
-    <input id="manualId" placeholder="部品IDを入力">
-    <button id="addManual">追加</button>
+    <div id="reader"></div>
+
+    <div id="cameraStatus" role="status" aria-live="polite">
+      カメラを起動しています……
+    </div>
+
+    <button id="restartBtn" class="full-button" type="button">
+      カメラを再起動
+    </button>
+
+    <p class="muted">
+      QRコードをカメラに向けてください。同じ部品IDは、連続して読み取った場合、
+      2秒以内の重複を無視します。再度読み取ると数量が1増えます。
+    </p>
   </div>
 
-  <div class="list-heading">
-    <h3>仮リスト</h3>
-    <span id="count">0種類・合計0個</span>
+  <div class="panel">
+    <h2>3. 仮リスト</h2>
+
+    <div class="counter" id="counter">0種類・合計0個</div>
+    <div id="list">
+      <div class="item muted">まだ部品が登録されていません。</div>
+    </div>
+
+    <p class="muted">
+      数量を変更したり、不要な部品を削除したりできます。
+      数量は1以上の整数で入力してください。
+    </p>
   </div>
 
-  <div id="list"></div>
+  <div class="panel">
+    <h2>4. QRコードが読めない場合</h2>
 
-  <button id="confirmButton">登録内容を確認</button>
-  <div id="confirmResult"></div>
+    <div class="manual-row">
+      <input
+        id="manualId"
+        type="text"
+        placeholder="部品IDを入力"
+        autocomplete="off"
+      >
+      <button id="manualAddBtn" type="button">追加</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>5. 内容を確認</h2>
+
+    <button id="confirmBtn" class="full-button" type="button">
+      仮リストの内容を確認
+    </button>
+
+    <div id="summary" hidden></div>
+
+    <p class="warning">
+      ※ このページは読み取りテスト用です。確認しても、実際の在庫データは更新されません。
+    </p>
+  </div>
 
   <script>
-    const items = [];
+    const items = new Map();
+
+    let mode = "入庫";
     let scanner = null;
+    let scannerRunning = false;
     let starting = false;
-    let lastScannedId = "";
-    let lastScannedAt = 0;
 
-    const status = document.getElementById("status");
+    // 同じQRコードを連続で読み取ることによる誤登録を防ぐ
+    const lastScanned = new Map();
+    const DUPLICATE_IGNORE_MS = 2000;
+
+    const readerElement = document.getElementById("reader");
+    const statusElement = document.getElementById("cameraStatus");
     const listElement = document.getElementById("list");
-    const countElement = document.getElementById("count");
-    const startButton = document.getElementById("startButton");
-    const stopButton = document.getElementById("stopButton");
-    const confirmResult = document.getElementById("confirmResult");
+    const counterElement = document.getElementById("counter");
+    const summaryElement = document.getElementById("summary");
 
-    function showStatus(message, success = false) {
-      status.textContent = message;
-      status.classList.toggle("success", success);
+    function setStatus(message, type = "") {
+      statusElement.textContent = message;
+      statusElement.className = type;
     }
 
+    function normalizeId(value) {
+      return String(value || "").trim();
+    }
+
+    function setMode(newMode) {
+      mode = newMode;
+
+      document.getElementById("modeLabel").textContent = mode;
+      document.getElementById("inBtn").classList.toggle(
+        "selected",
+        mode === "入庫"
+      );
+      document.getElementById("outBtn").classList.toggle(
+        "selected",
+        mode === "出庫"
+      );
+
+      summaryElement.hidden = true;
+    }
+
+    document.getElementById("inBtn").addEventListener("click", () => {
+      setMode("入庫");
+    });
+
+    document.getElementById("outBtn").addEventListener("click", () => {
+      setMode("出庫");
+    });
+
     function addItem(rawId, source = "manual") {
-      const id = rawId.trim();
-      if (!id) return;
+      const id = normalizeId(rawId);
 
-      const now = Date.now();
-
-      // カメラによる同一QRの連続検出を2秒間だけ無視する
-      if (
-        source === "camera" &&
-        id === lastScannedId &&
-        now - lastScannedAt < 2000
-      ) {
+      if (!id) {
+        setStatus("部品IDを入力してください。", "error");
         return;
       }
 
       if (source === "camera") {
-        lastScannedId = id;
-        lastScannedAt = now;
+        const now = Date.now();
+        const previousTime = lastScanned.get(id) || 0;
+
+        if (now - previousTime < DUPLICATE_IGNORE_MS) {
+          return;
+        }
+
+        lastScanned.set(id, now);
       }
 
-      const existing = items.find(item => item.id === id);
-
-      if (existing) {
+      if (items.has(id)) {
+        const existing = items.get(id);
         existing.qty += 1;
       } else {
-        items.push({ id, qty: 1 });
+        items.set(id, { id, qty: 1 });
       }
 
-      renderList(id);
+      renderList();
+      summaryElement.hidden = true;
 
-      showStatus(
-        "✓ 読み取り成功！\n部品ID：" + id +
-        "\n仮リストに追加しました。",
-        true
+      setStatus(
+        "✓ 読み取り成功！ 部品ID：" + id + " を仮リストに追加しました。",
+        "success"
       );
-
-      confirmResult.textContent = "";
     }
 
-    function renderList(newId = "") {
+    function renderList() {
       listElement.replaceChildren();
 
-      const totalQty = items.reduce((sum, item) => sum + item.qty, 0);
-      countElement.textContent =
-        items.length + "種類・合計" + totalQty + "個";
+      if (items.size === 0) {
+        const empty = document.createElement("div");
+        empty.className = "item muted";
+        empty.textContent = "まだ部品が登録されていません。";
+        listElement.appendChild(empty);
+      }
 
-      items.forEach((item, index) => {
+      let total = 0;
+
+      for (const [id, item] of items) {
+        total += item.qty;
+
         const row = document.createElement("div");
         row.className = "item";
 
-        const idText = document.createElement("span");
-        idText.className = "item-id";
-        idText.textContent = item.id;
-        row.appendChild(idText);
+        const idLabel = document.createElement("div");
+        idLabel.className = "item-id";
+        idLabel.textContent = id;
+
+        const controls = document.createElement("div");
+        controls.className = "item-controls";
+
+        const qtyLabel = document.createElement("label");
+        qtyLabel.textContent = "数量";
 
         const qtyInput = document.createElement("input");
+        qtyInput.className = "qty";
         qtyInput.type = "number";
         qtyInput.min = "1";
         qtyInput.step = "1";
-        qtyInput.value = item.qty;
-        qtyInput.setAttribute("aria-label", item.id + "の数量");
+        qtyInput.inputMode = "numeric";
+        qtyInput.value = String(item.qty);
+        qtyInput.setAttribute("aria-label", id + " の数量");
 
         qtyInput.addEventListener("change", () => {
-          const qty = Number(qtyInput.value);
+          const newQty = Number(qtyInput.value);
 
-          if (!Number.isInteger(qty) || qty < 1) {
-            alert("数量は1以上の整数にしてください。");
-            qtyInput.value = item.qty;
+          if (!Number.isInteger(newQty) || newQty < 1) {
+            qtyInput.value = String(item.qty);
+            setStatus("数量は1以上の整数で入力してください。", "error");
             return;
           }
 
-          item.qty = qty;
+          item.qty = newQty;
           renderList();
-          confirmResult.textContent = "";
+          summaryElement.hidden = true;
+          setStatus("数量を更新しました。", "success");
         });
 
-        row.appendChild(qtyInput);
+        const deleteButton = document.createElement("button");
+        deleteButton.type = "button";
+        deleteButton.className = "delete-btn";
+        deleteButton.textContent = "削除";
 
-        const removeButton = document.createElement("button");
-        removeButton.textContent = "削除";
-        removeButton.addEventListener("click", () => {
-          items.splice(index, 1);
+        deleteButton.addEventListener("click", () => {
+          items.delete(id);
           renderList();
-          confirmResult.textContent = "";
+          summaryElement.hidden = true;
+          setStatus("部品ID：" + id + " を仮リストから削除しました。");
         });
 
-        row.appendChild(removeButton);
+        qtyLabel.appendChild(qtyInput);
+        controls.appendChild(qtyLabel);
+        controls.appendChild(deleteButton);
+
+        row.appendChild(idLabel);
+        row.appendChild(controls);
         listElement.appendChild(row);
-      });
-
-      // 新しく追加した部品がリストに見える位置へ移動
-      if (newId) {
-        const rows = listElement.querySelectorAll(".item");
-        const newIndex = items.findIndex(item => item.id === newId);
-        if (newIndex >= 0 && rows[newIndex]) {
-          rows[newIndex].scrollIntoView({
-            block: "nearest",
-            behavior: "smooth"
-          });
-        }
       }
+
+      counterElement.textContent =
+        items.size + "種類・合計" + total + "個";
     }
 
-    startButton.addEventListener("click", async () => {
-      if (scanner || starting) return;
-
-      starting = true;
-      startButton.disabled = true;
-      showStatus("カメラを起動しています…");
-
-      try {
-        scanner = new Html5Qrcode("reader");
-
-        await scanner.start(
-          { facingMode: "environment" },
-          { fps: 10, qrbox: { width: 200, height: 200 } },
-          decodedText => addItem(decodedText, "camera"),
-          () => {}
-        );
-
-        stopButton.disabled = false;
-        showStatus("読み取り中です。QRコードをかざしてください。");
-      } catch (error) {
-        showStatus("カメラ起動エラー：" + error);
-
-        if (scanner) {
-          try { await scanner.clear(); } catch (e) {}
-          scanner = null;
-        }
-
-        startButton.disabled = false;
-      } finally {
-        starting = false;
-      }
-    });
-
-    stopButton.addEventListener("click", async () => {
-      if (!scanner) return;
-
-      try {
-        await scanner.stop();
-        await scanner.clear();
-      } catch (error) {
-        showStatus("停止時のエラー：" + error);
-      }
-
-      scanner = null;
-      startButton.disabled = false;
-      stopButton.disabled = true;
-      showStatus("カメラ停止中");
-    });
-
-    document.getElementById("addManual").addEventListener("click", () => {
+    document.getElementById("manualAddBtn").addEventListener("click", () => {
       const input = document.getElementById("manualId");
-      const id = input.value.trim();
+      const id = normalizeId(input.value);
 
       if (!id) {
-        alert("部品IDを入力してください。");
+        setStatus("部品IDを入力してください。", "error");
+        input.focus();
         return;
       }
 
       addItem(id, "manual");
       input.value = "";
+      input.focus();
     });
 
     document.getElementById("manualId").addEventListener("keydown", event => {
       if (event.key === "Enter") {
-        document.getElementById("addManual").click();
+        event.preventDefault();
+        document.getElementById("manualAddBtn").click();
       }
     });
 
-    document.getElementById("confirmButton").addEventListener("click", () => {
-      if (items.length === 0) {
-        confirmResult.textContent = "仮リストは空です。";
+    document.getElementById("confirmBtn").addEventListener("click", () => {
+      if (items.size === 0) {
+        setStatus("仮リストに部品がありません。", "error");
+        summaryElement.hidden = true;
         return;
       }
 
-      confirmResult.textContent =
-        "登録内容（確認用）\n\n" +
-        items.map(item => item.id + " × " + item.qty).join("\n") +
-        "\n\n※ 実際の在庫数は変更されていません。";
+      let total = 0;
+      const lines = [];
+
+      for (const item of items.values()) {
+        total += item.qty;
+        lines.push(item.id + "： " + item.qty + "個");
+      }
+
+      summaryElement.textContent =
+        "処理内容：" + mode + "\n" +
+        "登録種類数：" + items.size + "種類\n" +
+        "合計数量：" + total + "個\n\n" +
+        lines.join("\n") +
+        "\n\n※確認用の表示です。実際の在庫は更新されていません。";
+
+      summaryElement.hidden = false;
+      setStatus("仮リストの確認用サマリーを表示しました。", "success");
+    });
+
+    async function startScanner() {
+      if (starting) return;
+
+      starting = true;
+      setStatus("カメラを起動しています……");
+
+      try {
+        if (!scanner) {
+          scanner = new Html5Qrcode("reader");
+        }
+
+        if (scannerRunning) {
+          await scanner.stop();
+          scannerRunning = false;
+        }
+
+        await scanner.start(
+          { facingMode: "environment" },
+          {
+            fps: 10,
+            qrbox: { width: 250, height: 250 },
+            aspectRatio: 1.0
+          },
+          decodedText => {
+            addItem(decodedText, "camera");
+          },
+          () => {
+            // 読み取り中の未検出エラーは画面に表示しない
+          }
+        );
+
+        scannerRunning = true;
+        setStatus("カメラ起動中です。QRコードを枠内に合わせてください。");
+      } catch (error) {
+        console.error(error);
+        setStatus(
+          "カメラを起動できませんでした。ブラウザのカメラ許可を確認してください。詳細：" +
+          (error && error.message ? error.message : error),
+          "error"
+        );
+      } finally {
+        starting = false;
+      }
+    }
+
+    document.getElementById("restartBtn").addEventListener("click", async () => {
+      if (starting) return;
+
+      try {
+        if (scanner && scannerRunning) {
+          await scanner.stop();
+          scannerRunning = false;
+        }
+
+        await startScanner();
+      } catch (error) {
+        console.error(error);
+        setStatus("カメラの再起動に失敗しました。ページを再読み込みしてください。", "error");
+      }
     });
 
     renderList();
+    startScanner();
   </script>
 </body>
 </html>
+```
