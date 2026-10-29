@@ -529,6 +529,31 @@
 
         scannerRunning = true;
         setStatus("カメラ起動中です。QRコードを枠内に合わせてください。");
+
+
+        // カメラの実際の映像設定を確認する
+        const video = readerElement.querySelector("video");
+
+        if (video && video.srcObject) {
+          const tracks = video.srcObject.getVideoTracks();
+          const track = tracks[0];
+
+          if (track) {
+            const settings = track.getSettings();
+
+            console.log("カメラの映像設定：", settings);
+
+            setStatus(
+              "カメラ起動中です。\n" +
+              "映像解像度：" +
+              (settings.width || "不明") + " × " +
+              (settings.height || "不明") + "\n" +
+              "QRコードを枠内に合わせてください。"
+            );
+          }
+        }
+
+        
       } catch (error) {
         console.error(error);
         setStatus(
