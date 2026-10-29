@@ -285,6 +285,19 @@
     </p>
   </div>
 
+    <!-- 一時的なJSONP通信テスト用：テスト完了後に削除 -->
+  <div class="panel">
+    <h2>通信テスト（仮設）</h2>
+
+    <button id="commTestBtn" class="full-button" type="button">
+      GASとの通信をテスト
+    </button>
+
+    <div id="commTestResult" role="status" aria-live="polite">
+      まだテストしていません。
+    </div>
+  </div>
+
   <script>
     const items = new Map();
 
@@ -302,6 +315,81 @@
     const listElement = document.getElementById("list");
     const counterElement = document.getElementById("counter");
     const summaryElement = document.getElementById("summary");
+
+    
+    // 一時的なJSONP通信テスト用：テスト完了後に削除
+    const commTestResult = document.getElementById("commTestResult");
+    const commTestBtn = document.getElementById("commTestBtn");
+
+    // ★ここを実際のGAS WebアプリURLに置き換える
+    const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwaVKkAo_w6ywEyYSTF-VQdj2X1L9PINK54boPhgV-EOM3f4NjxrjSMSIv-zIljXY4flw/exec";
+
+    function handleCommTestResponse(result) {
+      commTestBtn.disabled = false;
+
+      if (result && result.ok === true) {
+        commTestResult.textContent =
+          "成功：" + result.message +
+          "\n応答時刻：" + result.timestamp;
+      } else {
+        commTestResult.textContent =
+          "エラー：GASから想定外の応答が返されました。";
+      }
+    }
+
+    commTestBtn.addEventListener("click", () => {
+      if (
+        !GAS_WEB_APP_URL.startsWith(
+          "https://script.google.com/macros/s/"
+        ) ||
+        !GAS_WEB_APP_URL.endsWith("/exec")
+      ) {
+        commTestResult.textContent =
+          "設定エラー：GAS_WEB_APP_URLに正しいWebアプリURLを設定してください。";
+        return;
+      }
+
+      commTestBtn.disabled = true;
+      commTestResult.textContent = "GASに接続しています……";
+
+      const script = document.createElement("script");
+      const callbackName = "handleCommTestResponse";
+
+      const cleanup = () => {
+        script.remove();
+        commTestBtn.disabled = false;
+      };
+
+      const timeoutId = setTimeout(() => {
+        cleanup();
+        commTestResult.textContent =
+          "タイムアウト：応答を受け取れませんでした。URLや公開設定を確認してください。";
+      }, 15000);
+
+      window[callbackName] = result => {
+        clearTimeout(timeoutId);
+        cleanup();
+        handleCommTestResponse(result);
+        delete window[callbackName];
+      };
+
+      script.onerror = () => {
+        clearTimeout(timeoutId);
+        cleanup();
+        delete window[callbackName];
+        commTestResult.textContent =
+          "通信エラー：GASのURL、デプロイ状態、アクセス権限などを確認してください。";
+      };
+
+      script.src =
+        GAS_WEB_APP_URL +
+        "?mode=commtest&callback=" +
+        encodeURIComponent(callbackName) +
+        "&_=" + Date.now();
+
+      document.head.appendChild(script);
+    });
+
 
     function setStatus(message, type = "") {
       statusElement.textContent = message;
