@@ -539,9 +539,21 @@
           const track = tracks[0];
 
           if (track) {
-            const settings = track.getSettings();
+            
+const settings = track.getSettings();
+const capabilities = track.getCapabilities();
 
-            console.log("カメラの映像設定：", settings);
+console.log("カメラの映像設定：", settings);
+console.log("カメラの対応機能：", capabilities);
+
+setStatus(
+  "カメラ起動中です。\n" +
+  "映像解像度：" +
+  (settings.width || "不明") + " × " +
+  (settings.height || "不明") +
+  "\nカメラ設定を取得しました。"
+);
+
 
             setStatus(
               "カメラ起動中です。\n" +
