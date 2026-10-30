@@ -546,6 +546,9 @@ const capabilities = track.getCapabilities();
 console.log("カメラの映像設定：", settings);
 console.log("カメラの対応機能：", capabilities);
 
+console.log("【カメラ設定の詳細】", JSON.stringify(settings));
+console.log("【カメラ対応機能の詳細】", JSON.stringify(capabilities));
+
 setStatus(
   "カメラ起動中です。\n" +
   "映像解像度：" +
