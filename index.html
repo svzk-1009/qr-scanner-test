@@ -229,6 +229,18 @@
 
     <div id="reader"></div>
 
+    <div id="cameraInfo" style="
+  margin: 10px;
+  padding: 10px;
+  background: #f0f0f0;
+  color: #222;
+  font-size: 13px;
+  white-space: pre-line;
+  border-radius: 5px;
+">
+  カメラ情報を取得中...
+</div>
+
     <div id="cameraStatus" role="status" aria-live="polite">
       カメラを起動しています……
     </div>
@@ -542,6 +554,27 @@
             
 const settings = track.getSettings();
 const capabilities = track.getCapabilities();
+
+const infoElement = document.getElementById("cameraInfo");
+
+if (infoElement) {
+  infoElement.textContent =
+    "【カメラ映像設定】\n" +
+    "解像度：" + settings.width + " × " + settings.height + "\n" +
+    "カメラ：" + (settings.facingMode || "不明") + "\n" +
+    "フレームレート：" + (settings.frameRate || "不明") + " fps\n" +
+    "フォーカス設定：" + (settings.focusMode || "取得不可") + "\n\n" +
+
+    "【対応機能】\n" +
+    "フォーカス：" +
+    (capabilities.focusMode
+      ? capabilities.focusMode.join(", ")
+      : "取得不可") + "\n" +
+    "ズーム：" +
+    (capabilities.zoom
+      ? capabilities.zoom.min + " ～ " + capabilities.zoom.max
+      : "取得不可");
+}
 
 console.log("カメラの映像設定：", settings);
 console.log("カメラの対応機能：", capabilities);
