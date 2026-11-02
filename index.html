@@ -549,6 +549,37 @@
         if (video && video.srcObject) {
           const tracks = video.srcObject.getVideoTracks();
           const track = tracks[0];
+          
+          // カメラ解像度の変更テスト
+if (track) {
+  const capabilities = track.getCapabilities();
+
+  console.log("解像度変更前：", track.getSettings());
+
+  if (capabilities.width && capabilities.height) {
+    track.applyConstraints({
+      width: { ideal: 1280 },
+      height: { ideal: 720 }
+    }).then(() => {
+      console.log("解像度変更後：", track.getSettings());
+
+      const newSettings = track.getSettings();
+
+      const infoElement = document.getElementById("cameraInfo");
+
+      if (infoElement) {
+        infoElement.textContent +=
+          "\n\n【解像度変更テスト】\n" +
+          "変更後：" +
+          newSettings.width + " × " +
+          newSettings.height;
+      }
+
+    }).catch(error => {
+      console.error("解像度変更失敗：", error);
+    });
+  }
+}
 
           if (track) {
             
