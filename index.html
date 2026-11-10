@@ -579,11 +579,12 @@ if (
     "single-shotは対応機能に含まれていません。";
 }
 
-// 変更後のカメラ設定を取得
+// 現在のカメラ設定を取得
 const settings = track.getSettings();
+const capabilities = track.getCapabilities();
 
-console.log("フォーカス変更結果：", focusTestMessage);
-console.log("変更後のカメラ設定：", settings);
+console.log("現在のカメラ設定：", settings);
+
 
 
 const infoElement = document.getElementById("cameraInfo");
@@ -596,8 +597,6 @@ if (infoElement) {
     "フレームレート：" + (settings.frameRate || "不明") + " fps\n" +
     "フォーカス設定：" + (settings.focusMode || "取得不可") + "\n\n" +
 
-    focusTestMessage + "\n\n" +
-
     "【対応機能】\n" +
     "フォーカス：" +
     (capabilities.focusMode
@@ -606,6 +605,26 @@ if (infoElement) {
     "ズーム：" +
     (capabilities.zoom
       ? capabilities.zoom.min + " ～ " + capabilities.zoom.max
+      : "取得不可") + "\n\n" +
+
+    "【露出・明るさ関連】\n" +
+    "露出モード：" +
+    (capabilities.exposureMode
+      ? capabilities.exposureMode.join(", ")
+      : "取得不可") + "\n" +
+    "露出補正：" +
+    (capabilities.exposureCompensation
+      ? capabilities.exposureCompensation.min + " ～ " +
+        capabilities.exposureCompensation.max
+      : "取得不可") + "\n" +
+    "露出時間：" +
+    (capabilities.exposureTime
+      ? capabilities.exposureTime.min + " ～ " +
+        capabilities.exposureTime.max
+      : "取得不可") + "\n" +
+    "ライト：" +
+    (capabilities.torch !== undefined
+      ? capabilities.torch
       : "取得不可");
 }
 
