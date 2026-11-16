@@ -553,38 +553,13 @@
                  if (track) {
             
 
-const capabilities = track.getCapabilities();
 
-// single-shotへの変更テスト
-let focusTestMessage = "";
-
-if (
-  capabilities.focusMode &&
-  capabilities.focusMode.includes("single-shot")
-) {
-  try {
-    await track.applyConstraints({
-      advanced: [{ focusMode: "single-shot" }]
-    });
-
-    focusTestMessage = "single-shotへの変更に成功しました。";
-
-  } catch (error) {
-    focusTestMessage =
-      "single-shotへの変更に失敗しました：" + error.message;
-  }
-
-} else {
-  focusTestMessage =
-    "single-shotは対応機能に含まれていません。";
-}
-
-// 現在のカメラ設定を取得
+// 現在のカメラ設定と対応機能を取得
 const settings = track.getSettings();
 const capabilities = track.getCapabilities();
 
 console.log("現在のカメラ設定：", settings);
-
+console.log("カメラの対応機能：", capabilities);
 
 
 const infoElement = document.getElementById("cameraInfo");
