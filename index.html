@@ -555,11 +555,34 @@
 
 
 // 現在のカメラ設定と対応機能を取得
-const settings = track.getSettings();
 const capabilities = track.getCapabilities();
+
+// 露出補正を +1 に変更するテスト
+let exposureTestMessage = "";
+
+if (capabilities.exposureCompensation) {
+  try {
+    await track.applyConstraints({
+      advanced: [
+        { exposureCompensation: 1 }
+      ]
+    });
+
+    exposureTestMessage = "露出補正 +1 の設定に成功しました。";
+
+  } catch (error) {
+    exposureTestMessage = "露出補正の変更に失敗しました：" + error.message;
+  }
+} else {
+  exposureTestMessage = "露出補正には対応していません。";
+}
+
+// 変更後のカメラ設定を取得
+const settings = track.getSettings();
 
 console.log("現在のカメラ設定：", settings);
 console.log("カメラの対応機能：", capabilities);
+console.log("露出補正テスト：", exposureTestMessage);
 
 
 const infoElement = document.getElementById("cameraInfo");
