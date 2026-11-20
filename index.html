@@ -229,18 +229,6 @@
 
     <div id="reader"></div>
 
-    <div id="cameraInfo" style="
-  margin: 10px;
-  padding: 10px;
-  background: #f0f0f0;
-  color: #222;
-  font-size: 13px;
-  white-space: pre-line;
-  border-radius: 5px;
-">
-  カメラ情報を取得中...
-</div>
-
     <div id="cameraStatus" role="status" aria-live="polite">
       カメラを起動しています……
     </div>
@@ -551,103 +539,21 @@
           const track = tracks[0];
           
                  if (track) {
-            
 
-
-// 現在のカメラ設定と対応機能を取得
+// 露出補正を +0.6 に設定
 const capabilities = track.getCapabilities();
-
-// 露出補正を +1 に変更するテスト
-let exposureTestMessage = "";
 
 if (capabilities.exposureCompensation) {
   try {
     await track.applyConstraints({
       advanced: [
-       { exposureCompensation: 0.6 }
+        { exposureCompensation: 0.6 }
       ]
     });
-
-    exposureTestMessage = "露出補正 +1 の設定に成功しました。";
-
   } catch (error) {
-    exposureTestMessage = "露出補正の変更に失敗しました：" + error.message;
+    console.warn("露出補正の設定に失敗しました：", error);
   }
-} else {
-  exposureTestMessage = "露出補正には対応していません。";
 }
-
-// 変更後のカメラ設定を取得
-const settings = track.getSettings();
-
-console.log("現在のカメラ設定：", settings);
-console.log("カメラの対応機能：", capabilities);
-console.log("露出補正テスト：", exposureTestMessage);
-
-
-const infoElement = document.getElementById("cameraInfo");
-
-if (infoElement) {
-  infoElement.textContent =
-    "【カメラ映像設定】\n" +
-    "解像度：" + settings.width + " × " + settings.height + "\n" +
-    "カメラ：" + (settings.facingMode || "不明") + "\n" +
-    "フレームレート：" + (settings.frameRate || "不明") + " fps\n" +
-    "フォーカス設定：" + (settings.focusMode || "取得不可") + "\n\n" +
-
-    "【対応機能】\n" +
-    "フォーカス：" +
-    (capabilities.focusMode
-      ? capabilities.focusMode.join(", ")
-      : "取得不可") + "\n" +
-    "ズーム：" +
-    (capabilities.zoom
-      ? capabilities.zoom.min + " ～ " + capabilities.zoom.max
-      : "取得不可") + "\n\n" +
-
-    "【露出・明るさ関連】\n" +
-    "露出モード：" +
-    (capabilities.exposureMode
-      ? capabilities.exposureMode.join(", ")
-      : "取得不可") + "\n" +
-    "露出補正：" +
-    (capabilities.exposureCompensation
-      ? capabilities.exposureCompensation.min + " ～ " +
-        capabilities.exposureCompensation.max
-      : "取得不可") + "\n" +
-    "露出時間：" +
-    (capabilities.exposureTime
-      ? capabilities.exposureTime.min + " ～ " +
-        capabilities.exposureTime.max
-      : "取得不可") + "\n" +
-    "ライト：" +
-    (capabilities.torch !== undefined
-      ? capabilities.torch
-      : "取得不可");
-}
-
-console.log("カメラの映像設定：", settings);
-console.log("カメラの対応機能：", capabilities);
-
-console.log("【カメラ設定の詳細】", JSON.stringify(settings));
-console.log("【カメラ対応機能の詳細】", JSON.stringify(capabilities));
-
-setStatus(
-  "カメラ起動中です。\n" +
-  "映像解像度：" +
-  (settings.width || "不明") + " × " +
-  (settings.height || "不明") +
-  "\nカメラ設定を取得しました。"
-);
-
-
-            setStatus(
-              "カメラ起動中です。\n" +
-              "映像解像度：" +
-              (settings.width || "不明") + " × " +
-              (settings.height || "不明") + "\n" +
-              "QRコードを枠内に合わせてください。"
-            );
           }
         }
 
